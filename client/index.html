@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html>   
+   <head>
+    <title>Bootstrap 101 Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <!-- Latest compiled and minified CSS -->
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+      <!-- Optional theme -->
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+
+      <style type="text/css">
+body {
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background-color: #eee;
+}
+
+.form-details {
+  max-width: 330px;
+  padding: 15px;
+  margin: 0 auto;
+}
+.form-details .form-details-heading,
+.form-details .checkbox {
+  margin-bottom: 10px;
+}
+.form-details .checkbox {
+  font-weight: normal;
+}
+.form-details .form-control {
+  position: relative;
+  height: auto;
+  padding: 10px;
+  font-size: 16px;
+}
+.form-details .form-control:focus {
+  z-index: 2;
+}
+      </style>
+  </head>
+  <body>
+
+    <div class="container">
+
+      <form class="form-details" method="post" id="form" >
+
+        <h2 class="form-details-heading">Details</h2>
+
+        <label for="inputEmail" class="sr-only">Email address</label>
+        <input type="email" id="inputEmail" class="form-control" 
+        placeholder="Email address" required autofocus>
+
+        <label for="inputCardNumber" class="sr-only">Card Number</label>
+        <input type="text" id="inputCardNumber" class="form-control" 
+        placeholder="Card Number" required>
+
+        <label for="inputCVV" class="sr-only">CVV</label>
+        <input type="text" id="inputCVV" class="form-control" 
+        placeholder="Security Code" required>
+
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" value="agree"> Agree to Terms
+          </label>
+        </div>
+
+        <button  class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+      </form>
+
+    </div> <!-- /container -->
+
+  </body>
+
+  <script>  
+  
+  // @Global 
+  // formTime is used to calculate the time until form submission.
+  var formTime = 0;  
+  
+  //  windowHeightBefore and  windowWidthBefore are used to save the initial window size.
+  var windowHeightBefore = window.outerHeight, windowWidthBefore = window.outerWidth;
+  
+  // Adding event listener for each field to fire when the user start typing in them.
+  document.getElementById("inputEmail").addEventListener("input", typingEvent);
+  document.getElementById("inputCardNumber").addEventListener("input", typingEvent);
+  document.getElementById("inputCVV").addEventListener("input", typingEvent);
+
+  // Adding event listener for each field to fire when the user copy from them.
+  document.getElementById("inputEmail").addEventListener("copy", copyAndPasteEvent);
+  document.getElementById("inputCardNumber").addEventListener("copy", copyAndPasteEvent);
+  document.getElementById("inputCVV").addEventListener("copy", copyAndPasteEvent);
+
+  // Adding event listener for each field to fire when the user paste to them.
+  document.getElementById("inputEmail").addEventListener("paste", copyAndPasteEvent);
+  document.getElementById("inputCardNumber").addEventListener("paste", copyAndPasteEvent);
+  document.getElementById("inputCVV").addEventListener("paste", copyAndPasteEvent);
+
+  // Adding event listener for the form to fire when the user press submit.
+  document.getElementById("form").addEventListener("submit", onSubmitEvent);
+ 
+  // Adding event listener for the window to fire when the user  resize it.
+  window.addEventListener("resize",onResizeEvent);
+
+  //@Functions
+  //getSessionID() is a function used to retrive the sessionID from cookies
+  function getSessionID()
+  {
+    var str = String(document.cookie.match(/sessionid=[^;]+/));
+    var sessionID = str.substr(10,str.length-10);    
+    return sessionID;
+  }
+
+  //@Event Handlers
+  //typingEvent() is a function used as event handler when user start typing in one of the fields
+  function typingEvent() {
+    formTime = new Date();
+    //Removing the event listener for knowing the first time start typing only
+    document.getElementById("inputEmail").removeEventListener("input", typingEvent);
+    document.getElementById("inputCardNumber").removeEventListener("input", typingEvent);
+    document.getElementById("inputCVV").removeEventListener("input", typingEvent);
+  } 
+  //afterresize_event() is a function used to run just after the event happened when user resize the window
+  function afterResizeEvent(){
+    // Creating our JSON_request for resizing the window
+    var JSON_req = 
+    {
+      "eventType": "resizingWindow",
+      "websiteUrl": window.location.href,
+      "sessionId":  getSessionID(),
+      "beforeWidth": windowWidthBefore ,
+      "beforeHeight": windowHeightBefore ,
+      "afterWidth": window.outerWidth ,
+      "afterHeight": window.outerHeight
+    };
+    // Setting our request URL / Type (POST / GET) / Header Content-Type and sending it
+    var xhr = new XMLHttpRequest();
+    var url = "/event";
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    var data = JSON.stringify(JSON_req);
+    xhr.send(data);
+    
+  } 
+  //onResizeEvent() is a function used to run when the user resize the window
+  function onResizeEvent(){
+   setTimeout(afterResizeEvent,20);
+   // Removing the event listener for one time resizing request only 
+   window.removeEventListener("resize",onResizeEvent);
+  }
+
+ //copyAndPasteEvent() is a function used as event handler when user copy or paste in any field
+  function copyAndPasteEvent(){
+     // Creating our JSON_request for copy or paste in the fields
+    var JSON_req = 
+    {
+        "eventType": "copyAndPaste",
+        "websiteUrl":  window.location.href,
+        "sessionId": getSessionID(),
+        "copiedorpaste": true,
+        "formId": this.id
+    };
+    // Setting our request URL / Type (POST / GET) / Header Content-Type and sending it
+    var xhr = new XMLHttpRequest();
+    var url = "/event";
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    var data = JSON.stringify(JSON_req);
+    xhr.send(data);
+  }
+
+  //onSubmitEvent is a function used as event handler when user submit the form
+  function onSubmitEvent(event) {
+    // Calculating the time elapsed by the user
+    formTime = new Date() - formTime;   
+    formTime = formTime - 1000;
+    // Creating our JSON_request for submitting the form
+    var JSON_req = 
+    {
+      "eventType": "timeTaken",
+      "websiteUrl":  window.location.href,
+      "sessionId": getSessionID(),
+      "time": formTime // seconds
+    };
+    // Setting our request URL / Type (POST / GET) / Header Content-Type and sending it
+    var xhr = new XMLHttpRequest();
+    var url = "/event";
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    var data = JSON.stringify(JSON_req);
+    xhr.send(data);
+  } 
+  </script>
+</html>
